@@ -2,12 +2,13 @@ name: LeetCode Daily Bot
 
 on:
   schedule:
-    - cron: '00 05 * * *'   # 10:30 AM IST = 05:00 AM UTC, runs every day
-  workflow_dispatch:          # adds a manual "Run workflow" button on GitHub
+    - cron: '00 05 * * *'   # 10:30 AM IST = 05:00 AM UTC
+  workflow_dispatch:
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 10      # kill if stuck for more than 10 mins
 
     steps:
       - name: Checkout code
@@ -22,11 +23,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run LeetCode Bot
+        timeout-minutes: 8
         env:
+          PYTHONUNBUFFERED: "1"
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           LEETCODE_CSRFTOKEN: ${{ secrets.LEETCODE_CSRFTOKEN }}
           LEETCODE_SESSION:   ${{ secrets.LEETCODE_SESSION }}
           EMAIL_SENDER:       ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD:     ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECEIVER:     ${{ secrets.EMAIL_RECEIVER }}
-        run: python leetcode_daily.py
+        run: python -u leetcode_daily.py
