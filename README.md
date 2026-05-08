@@ -1,111 +1,110 @@
-# 🤖 LeetCode Daily Bot — Setup Guide
+# 🤖 LeetCode Daily Bot
 
-## What it does
-Every day at **10:30 AM**:
-1. 📥 Fetches LeetCode Problem of the Day (free public API)
-2. 🧠 Sends it to Groq AI (llama3-70b) to get an optimal Python solution
-3. 🚀 Auto-submits to LeetCode using your session cookies
-4. 🔁 If wrong answer → re-prompts AI with error context, retries up to 3x
-5. 📧 Emails you the solution + result (Accepted/Failed)
+> Automatically solves and submits LeetCode's Problem of the Day — every day at 10:30 AM IST. Emails you the solution. Keeps your streak alive on autopilot.
+
+![GitHub Actions](https://img.shields.io/badge/Runs%20On-GitHub%20Actions-blue?logo=github)
+![Free](https://img.shields.io/badge/Cost-100%25%20Free-green)
+![Python](https://img.shields.io/badge/Python-3.11-yellow?logo=python)
 
 ---
 
-## ⚙️ Step-by-Step Setup
+## ✨ What it does
 
-### 1. Install Python dependencies
-```bash
-pip install -r requirements.txt
-```
+Every day at **10:30 AM IST**, automatically:
 
-### 2. Get your Groq API Key (FREE)
-- Go to [console.groq.com](https://console.groq.com)
-- Sign up → Create API Key → Copy it
+1. 📥 Fetches LeetCode Problem of the Day (public API)
+2. 🧠 Solves it using **Qwen3-235B** via OpenRouter AI
+3. 🚀 Auto-submits to your LeetCode account
+4. 📧 Emails you the solution + result
+5. 🔁 If one AI fails → tries DeepSeek-R1 → Qwen2.5-Coder → Gemini → guaranteed fallback
 
-### 3. Get your LeetCode Session Cookies
-> ⚠️ These expire every ~2 weeks. You'll need to refresh them.
+---
 
-1. Open [leetcode.com](https://leetcode.com) and **login**
+## 🚀 Setup (5 minutes)
+
+### Step 1 — Fork this repo
+Click the **Fork** button at the top right of this page.
+
+### Step 2 — Get your API keys
+
+#### OpenRouter API Key (Free)
+1. Go to [openrouter.ai](https://openrouter.ai) → Sign up
+2. Click **Keys** → **Create Key** → Copy it (`sk-or-v1-...`)
+
+#### LeetCode Session Cookies
+1. Open [leetcode.com](https://leetcode.com) and **log in**
 2. Press **F12** → Go to **Application** tab → **Cookies** → `https://leetcode.com`
-3. Find and copy:
-   - `csrftoken` → paste as `LEETCODE_CSRFTOKEN`
-   - `LEETCODE_SESSION` → paste as `LEETCODE_SESSION`
+3. Copy the value of `csrftoken`
+4. Copy the value of `LEETCODE_SESSION`
 
-### 4. Get Gmail App Password
-1. Go to [myaccount.google.com/security](https://myaccount.google.com/security)
-2. Enable **2-Step Verification** (required)
-3. Search "App Passwords" → Create one for "Mail"
-4. Copy the 16-character password
+> Cookies expire every ~2 weeks. You will need to refresh them.
 
-### 5. Set up your .env file
-```bash
-cp .env.example .env
-# Edit .env with your actual values
-nano .env
-```
-
-### 6. Load .env and run the bot
-```bash
-# Option A: Using python-dotenv (recommended)
-python -c "from dotenv import load_dotenv; load_dotenv()" && python leetcode_daily.py
-
-# Option B: Export manually
-export $(cat .env | xargs) && python leetcode_daily.py
-```
-
-### 7. Test immediately (optional)
-In `leetcode_daily.py`, uncomment line 165:
-```python
-# daily_job()   ← remove the #
-```
-Run once to verify everything works, then comment it back.
+#### Gmail App Password
+1. Go to myaccount.google.com/security
+2. Enable **2-Step Verification**
+3. Search "App Passwords" → Create one → Copy the 16-char password
 
 ---
 
-## 🖥️ Run it 24/7 (Keep Streak Alive)
+### Step 3 — Add Secrets to your forked repo
 
-### Option A: Linux/Mac — run in background
-```bash
-nohup python leetcode_daily.py &> bot.log &
+Go to your forked repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+
+| Secret Name | Where to get it |
+|---|---|
+| `OPENROUTER_API_KEY` | openrouter.ai → Keys |
+| `LEETCODE_CSRFTOKEN` | Browser → F12 → Cookies |
+| `LEETCODE_SESSION` | Browser → F12 → Cookies |
+| `EMAIL_SENDER` | Your Gmail address |
+| `EMAIL_PASSWORD` | Gmail App Password (16 chars) |
+| `EMAIL_RECEIVER` | Email where you want solutions sent |
+
+---
+
+### Step 4 — Enable GitHub Actions
+
+1. Go to your forked repo → **Actions** tab
+2. Click **"I understand my workflows, enable them"**
+
+---
+
+### Step 5 — Test it now!
+
+1. Go to **Actions** tab → **"LeetCode Daily Bot"** on the left
+2. Click **"Run workflow"** → **"Run workflow"** (green button)
+3. Watch it run — completes in ~3 minutes
+4. Check your email for the solution!
+
+---
+
+## Maintenance
+
+**Cookies expire every ~2 weeks.** When the bot fails:
+1. Open leetcode.com → log in → F12 → Cookies
+2. Copy fresh `csrftoken` and `LEETCODE_SESSION`
+3. GitHub → your repo → Settings → Secrets → update both values
+
+---
+
+## AI Fallback Chain
+
+```
+1st → Qwen3-235B       (best reasoning, free)
+2nd → DeepSeek-R1      (best coding benchmark)
+3rd → Qwen2.5-Coder    (specialized for code)
+4th → Gemini-2.5-Pro   (Google's best)
+5th → Retry with error context
+6th → Guaranteed pure-Python solution (cannot fail)
 ```
 
-### Option B: Free Cloud Hosting
-Deploy on [Railway.app](https://railway.app) or [Render.com](https://render.com) for free.
-- Upload your files
-- Set environment variables in the dashboard
-- It runs 24/7 without your laptop being on
+---
 
-### Option C: Windows Task Scheduler
-- Create a task that runs `python leetcode_daily.py` at startup
+## Cost: $0/month
+
+GitHub Actions (free) + OpenRouter free tier + Gmail SMTP (free) = totally free.
 
 ---
 
-## 📧 What the Email Looks Like
+## Disclaimer
 
-You'll get a daily email with:
-- ✅ Problem title, difficulty, link
-- 📊 Submission result (Accepted / runtime / memory)
-- 🐍 Full Python solution code
-
----
-
-## ⚠️ Important Notes
-
-| Topic | Detail |
-|-------|--------|
-| LeetCode ToS | Auto-submission is against ToS. Low risk if used personally at low frequency. |
-| Cookie expiry | `LEETCODE_SESSION` expires ~every 2 weeks. Update `.env` when it does. |
-| Groq rate limits | Free tier: 30 req/min — more than enough for 1 problem/day |
-| Streak safety | The bot submits at 10:30 AM IST. LeetCode streak resets at midnight UTC (5:30 AM IST) |
-
----
-
-## 🔧 Troubleshooting
-
-**"401 Unauthorized" on submit** → Your cookies expired. Re-fetch from browser.
-
-**"Module not found"** → Run `pip install -r requirements.txt`
-
-**Email not sending** → Make sure you're using an App Password, not your Gmail password.
-
-**AI gives wrong answer** → The bot auto-retries up to 3 times with error context. If still failing, the email will contain the best attempt.
-# Leetcode-Automation-bot
+Auto-submission is against LeetCode ToS. Use for personal/educational purposes only.
