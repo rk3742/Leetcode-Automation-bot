@@ -9,7 +9,6 @@ import re
 import time
 import smtplib
 import requests
-import schedule
 from datetime import datetime
 from collections import deque, defaultdict
 from email.mime.text import MIMEText
@@ -355,12 +354,5 @@ def daily_job():
 
 
 if __name__ == "__main__":
-    print("🤖 LeetCode Daily Bot started! (OpenRouter edition)")
-    print("📅 Scheduled for 10:30 AM every day")
-    print("Press Ctrl+C to stop\n")
-    schedule.every().day.at("10:30").do(daily_job)
-    # Uncomment to test immediately:
-    #daily_job()
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
+    print("🤖 LeetCode Daily Bot — GitHub Actions run")
+    daily_job()   # run once and exit
