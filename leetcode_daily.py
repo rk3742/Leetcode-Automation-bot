@@ -9,7 +9,6 @@ import re
 import time
 import smtplib
 import requests
-import schedule
 from datetime import datetime
 from collections import deque, defaultdict
 from email.mime.text import MIMEText
