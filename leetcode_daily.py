@@ -374,12 +374,5 @@ def daily_job():
 
 
 if __name__ == "__main__":
-    print("🤖 LeetCode Daily Bot started! (OpenRouter edition)")
-    print("📅 Scheduled for 10:30 AM every day")
-    print("Press Ctrl+C to stop\n")
-    schedule.every().day.at("10:30").do(daily_job)
-    # Uncomment to test immediately:
+    print("🤖 LeetCode Daily Bot — GitHub Actions run")
     daily_job()
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
