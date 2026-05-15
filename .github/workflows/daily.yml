@@ -2,13 +2,15 @@ name: LeetCode Daily Bot
 
 on:
   schedule:
-    - cron: '00 05 * * *'   # 10:30 AM IST = 05:00 AM UTC
-  workflow_dispatch:
+    - cron: '30 3 * * *'   # 3:30 AM UTC = 9:00 AM IST
+                            # Even with 3hr GitHub delay = runs by 12:30 PM IST
+                            # LeetCode streak resets midnight IST = plenty of time
+  workflow_dispatch:        # manual trigger button
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10      # kill if stuck for more than 10 mins
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
