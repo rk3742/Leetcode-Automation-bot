@@ -9,6 +9,7 @@ import re
 import time
 import smtplib
 import requests
+import schedule
 from datetime import datetime
 from collections import deque, defaultdict
 from email.mime.text import MIMEText
@@ -28,10 +29,11 @@ LEETCODE_GQL = "https://leetcode.com/graphql"
 
 # OpenRouter models to try in order (best coding models)
 OPENROUTER_MODELS = [
-    ("qwen/qwen3-235b-a22b",        "Qwen3-235B"),
-    ("deepseek/deepseek-r1",        "DeepSeek-R1"),
+    ("qwen/qwen3-235b-a22b",             "Qwen3-235B"),
+    ("deepseek/deepseek-r1",             "DeepSeek-R1"),
     ("qwen/qwen-2.5-coder-32b-instruct", "Qwen2.5-Coder"),
-    ("google/gemini-2.5-pro",       "Gemini-2.5-Pro"),
+    ("google/gemini-2.5-flash",          "Gemini-2.5-Flash"),
+    ("meta-llama/llama-4-maverick",      "Llama-4-Maverick"),
 ]
 
 
@@ -113,7 +115,7 @@ RULES:
     resp.raise_for_status()
     raw = resp.json()["choices"][0]["message"]["content"]
     if raw is None:
-        raise ValueError("Empty response from model")
+        raise ValueError("Empty response from model — check OpenRouter credits at openrouter.ai")
     code = raw.strip()
     # Strip <think>...</think> (DeepSeek / Qwen reasoning traces)
     code = re.sub(r"<think>.*?</think>", "", code, flags=re.DOTALL).strip()
@@ -125,74 +127,65 @@ RULES:
 
 
 # ─────────────────────────────────────────────
-#  STEP 3: Guaranteed fallback — pure Python, no AI
-#  Reads the real problem signature and builds a
-#  correct BFS + full-prime-factorization solution.
+#  STEP 3: Final fallback — ultra-simple AI prompt, all models
 # ─────────────────────────────────────────────
 def generate_guaranteed_solution(problem: dict) -> str:
-    print("🔒 Building guaranteed solution (pure Python, no AI)...")
-    starter = problem.get("starter", "")
-    m = re.search(r"def\s+(\w+)\s*\(self,\s*(\w+)", starter)
-    method = m.group(1) if m else "minJumps"
-    param  = m.group(2) if m else "nums"
+    """
+    Last resort: try every model with the simplest possible prompt.
+    No hardcoded algorithm — works for ANY problem type.
+    """
+    print("🔒 Final fallback — ultra-simple prompt to all models...")
 
-    code = f"""from collections import deque, defaultdict
+    # Strip HTML from content for cleaner prompt
+    clean_content = re.sub(r'<[^>]+>', ' ', problem['content'])
+    clean_content = re.sub(r'\s+', ' ', clean_content).strip()[:1500]
 
-class Solution:
-    def {method}(self, {param}: list) -> int:
-        n = len({param})
-        if n == 1:
-            return 0
+    simple_prompt = (
+        f"Solve this LeetCode problem in Python3.\n"
+        f"Output ONLY raw Python code. No markdown. No backticks. No explanation.\n\n"
+        f"Problem: {problem['title']} (#{problem['id']}) [{problem['difficulty']}]\n\n"
+        f"Starter code — use this EXACT class and method name:\n{problem['starter']}\n\n"
+        f"Examples:\n{problem['examples']}\n\n"
+        f"Description:\n{clean_content}"
+    )
 
-        max_val = max({param})
-        # Sieve of Eratosthenes
-        is_prime = bytearray([1]) * (max_val + 1)
-        is_prime[0] = is_prime[1] = 0
-        for i in range(2, int(max_val ** 0.5) + 1):
-            if is_prime[i]:
-                for j in range(i * i, max_val + 1, i):
-                    is_prime[j] = 0
+    for model_id, model_name in OPENROUTER_MODELS:
+        try:
+            print(f"  → {model_name}...")
+            resp = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://leetcode-bot.local",
+                },
+                json={
+                    "model": model_id,
+                    "messages": [{"role": "user", "content": simple_prompt}],
+                    "max_tokens": 2000,
+                    "temperature": 0.0,
+                },
+                timeout=60,
+            )
+            resp.raise_for_status()
+            raw = resp.json()["choices"][0]["message"]["content"]
+            if not raw:
+                continue
+            code = raw.strip()
+            code = re.sub(r"<think>.*?</think>", "", code, flags=re.DOTALL).strip()
+            if "```" in code:
+                code = re.sub(r"```(?:python3?)?\n?", "", code).strip().rstrip("`").strip()
+            if "class Solution" in code or "def " in code:
+                print(f"  ✅ Got fallback solution from {model_name}")
+                return code
+        except Exception as e:
+            print(f"  ⚠️  {model_name}: {e}")
 
-        # Map each prime p -> list of indices where nums[i] % p == 0
-        divisible = defaultdict(list)
-        for i, val in enumerate({param}):
-            for p in range(2, int(val ** 0.5) + 1):
-                if val % p == 0:
-                    if is_prime[p]:
-                        divisible[p].append(i)
-                    other = val // p
-                    if other != p and is_prime[other]:
-                        divisible[other].append(i)
-            if val > 1 and is_prime[val]:
-                divisible[val].append(i)
-
-        # BFS
-        dist = [-1] * n
-        dist[0] = 0
-        q = deque([0])
-        used_prime = set()
-
-        while q:
-            i = q.popleft()
-            if i == n - 1:
-                return dist[i]
-            d = dist[i]
-            for nb in (i - 1, i + 1):
-                if 0 <= nb < n and dist[nb] == -1:
-                    dist[nb] = d + 1
-                    q.append(nb)
-            val = {param}[i]
-            if is_prime[val] and val not in used_prime:
-                used_prime.add(val)
-                for j in divisible[val]:
-                    if dist[j] == -1:
-                        dist[j] = d + 1
-                        q.append(j)
-
-        return dist[n - 1]
-"""
-    print(f"✅ Built guaranteed solution (method={method}, param={param})")
-    return code
+    # Absolute last resort placeholder
+    m = re.search(r"def\s+(\w+)\s*\(self", problem.get("starter", ""))
+    method = m.group(1) if m else "solve"
+    print("  ❌ All models failed even in fallback")
+    return f"class Solution:\n    def {method}(self, *args):\n        pass  # All AI attempts failed"
 
 
 # ─────────────────────────────────────────────
@@ -339,13 +332,41 @@ def send_email(problem: dict, code: str, result: dict):
 # ─────────────────────────────────────────────
 #  MAIN
 # ─────────────────────────────────────────────
+def check_cookies_valid() -> bool:
+    """Quick check if LeetCode cookies are still valid."""
+    try:
+        resp = requests.get(
+            "https://leetcode.com/api/problems/all/",
+            cookies={"csrftoken": LEETCODE_CSRFTOKEN, "LEETCODE_SESSION": LEETCODE_SESSION},
+            timeout=10
+        )
+        # If cookies expired, LeetCode redirects to login (user_name will be empty)
+        data = resp.json()
+        user = data.get("user_name", "")
+        if user:
+            print(f"✅ Cookies valid — logged in as: {user}")
+            return True
+        else:
+            print("❌ COOKIES EXPIRED — please update LEETCODE_CSRFTOKEN and LEETCODE_SESSION in GitHub Secrets!")
+            return False
+    except Exception as e:
+        print(f"⚠️  Could not verify cookies: {e}")
+        return True  # assume valid, let submission fail naturally
+
+
 def daily_job():
     print(f"\n{'='*50}")
     print(f"🕙 LeetCode Daily Job started at {datetime.now().strftime('%H:%M:%S')}")
     print(f"{'='*50}")
     try:
+        # Step 0: Verify cookies before doing anything
+        cookies_ok = check_cookies_valid()
         problem = fetch_problem_of_the_day()
         code, result = solve_and_submit(problem)
+        if not cookies_ok:
+            result["status"] = "Cookie Expired"
+            result["passed"] = False
+            result["error"] = "⚠️ LeetCode cookies expired! Go to GitHub Secrets and update LEETCODE_CSRFTOKEN and LEETCODE_SESSION. Steps: Open leetcode.com → Login → F12 → Application → Cookies → copy both values."
         send_email(problem, code, result)
         print("✅ Daily job completed!\n")
     except Exception as e:
@@ -354,5 +375,12 @@ def daily_job():
 
 
 if __name__ == "__main__":
-    print("🤖 LeetCode Daily Bot — GitHub Actions run")
-    daily_job()   # run once and exit
+    print("🤖 LeetCode Daily Bot started! (OpenRouter edition)")
+    print("📅 Scheduled for 10:30 AM every day")
+    print("Press Ctrl+C to stop\n")
+    schedule.every().day.at("10:30").do(daily_job)
+    # Uncomment to test immediately:
+    daily_job()
+    while True:
+        schedule.run_pending()
+        time.sleep(30)
