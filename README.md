@@ -1,22 +1,41 @@
 # 🤖 LeetCode Daily Bot
 
-> Automatically solves and submits LeetCode's Problem of the Day — every day at 10:30 AM IST. Emails you the solution. Keeps your streak alive on autopilot.
+> Automatically solves and submits LeetCode's Problem of the Day — every day. Emails you the solution. Keeps your streak alive on autopilot. 100% free, forever.
 
 ![GitHub Actions](https://img.shields.io/badge/Runs%20On-GitHub%20Actions-blue?logo=github)
 ![Free](https://img.shields.io/badge/Cost-100%25%20Free-green)
 ![Python](https://img.shields.io/badge/Python-3.11-yellow?logo=python)
+![Models](https://img.shields.io/badge/AI%20Models-10%20Free-purple)
 
 ---
 
 ## ✨ What it does
 
-Every day at **10:30 AM IST**, automatically:
+Every day automatically:
 
-1. 📥 Fetches LeetCode Problem of the Day (public API)
-2. 🧠 Solves it using **Qwen3-235B** via OpenRouter AI
-3. 🚀 Auto-submits to your LeetCode account
-4. 📧 Emails you the solution + result
-5. 🔁 If one AI fails → tries DeepSeek-R1 → Qwen2.5-Coder → Gemini → guaranteed fallback
+1. 📥 Fetches LeetCode Problem of the Day (free public API)
+2. 🧠 Tries **10 different free AI models** with different algorithmic approaches
+3. 🚀 Auto-submits to your LeetCode account until Accepted
+4. 🔍 If all 10 fail → scrapes LeetCode discussions for a real solution
+5. 📧 Emails you the solution + result every day
+
+---
+
+## 🆓 AI Models Used (all 100% free)
+
+| Attempt | Model | Approach |
+|---|---|---|
+| 1 | Llama-4-Maverick | Brute force → optimize |
+| 2 | Llama-4-Scout | Hash map / dictionary |
+| 3 | Llama-3.3-70B | Two pointers |
+| 4 | Phi-4 | Binary search |
+| 5 | Gemma-3-27B | Dynamic programming |
+| 6 | Mistral-7B | Stack / queue |
+| 7 | Qwen2.5-7B | Sorting + greedy |
+| 8 | DeepSeek-R1-Distill | Sliding window |
+| 9 | Phi-3-Medium | Divide and conquer |
+| 10 | Hermes-3-405B | Math / bit manipulation |
+| 11 | Scrape LeetCode discussions | Real community solutions |
 
 ---
 
@@ -25,39 +44,41 @@ Every day at **10:30 AM IST**, automatically:
 ### Step 1 — Fork this repo
 Click the **Fork** button at the top right of this page.
 
-### Step 2 — Get your API keys
+### Step 2 — Get your keys
 
 #### OpenRouter API Key (Free)
 1. Go to [openrouter.ai](https://openrouter.ai) → Sign up
 2. Click **Keys** → **Create Key** → Copy it (`sk-or-v1-...`)
+> No credit card needed. All models used are on the free tier.
 
 #### LeetCode Session Cookies
 1. Open [leetcode.com](https://leetcode.com) and **log in**
-2. Press **F12** → Go to **Application** tab → **Cookies** → `https://leetcode.com`
-3. Copy the value of `csrftoken`
-4. Copy the value of `LEETCODE_SESSION`
+2. Press **F12** → **Application** tab → **Cookies** → `https://leetcode.com`
+3. Copy `csrftoken` and `LEETCODE_SESSION`
 
-> Cookies expire every ~2 weeks. You will need to refresh them.
+> ⚠️ Cookies expire every ~2 weeks. You will need to refresh them.
 
 #### Gmail App Password
-1. Go to myaccount.google.com/security
+1. Go to [myaccount.google.com/security](https://myaccount.google.com/security)
 2. Enable **2-Step Verification**
-3. Search "App Passwords" → Create one → Copy the 16-char password
+3. Search **"App Passwords"** → Create one → Copy the 16-char password
 
 ---
 
 ### Step 3 — Add Secrets to your forked repo
 
-Go to your forked repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+Go to your repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
-| Secret Name | Where to get it |
+| Secret Name | Value |
 |---|---|
-| `OPENROUTER_API_KEY` | openrouter.ai → Keys |
-| `LEETCODE_CSRFTOKEN` | Browser → F12 → Cookies |
-| `LEETCODE_SESSION` | Browser → F12 → Cookies |
+| `OPENROUTER_API_KEY` | From openrouter.ai → Keys |
+| `LEETCODE_CSRFTOKEN` | From browser cookies |
+| `LEETCODE_SESSION` | From browser cookies |
 | `EMAIL_SENDER` | Your Gmail address |
 | `EMAIL_PASSWORD` | Gmail App Password (16 chars) |
-| `EMAIL_RECEIVER` | Email where you want solutions sent |
+| `EMAIL_RECEIVER` | Where to send the daily solution (use Gmail, not college email) |
+
+> ⚠️ Use a personal Gmail as EMAIL_RECEIVER — college emails often block automated mail.
 
 ---
 
@@ -68,43 +89,37 @@ Go to your forked repo → **Settings** → **Secrets and variables** → **Acti
 
 ---
 
-### Step 5 — Test it now!
+### Step 5 — Test it!
 
-1. Go to **Actions** tab → **"LeetCode Daily Bot"** on the left
-2. Click **"Run workflow"** → **"Run workflow"** (green button)
-3. Watch it run — completes in ~3 minutes
-4. Check your email for the solution!
+1. **Actions** tab → **"LeetCode Daily Bot"** → **"Run workflow"** → **"Run workflow"**
+2. Watch it run live — completes in under 1 minute usually
+3. Check your Gmail for the solution!
 
 ---
 
-## Maintenance
+## 🔧 Maintenance
 
-**Cookies expire every ~2 weeks.** When the bot fails:
-1. Open leetcode.com → log in → F12 → Cookies
+**Every ~2 weeks** when cookies expire and bot fails:
+1. Open leetcode.com → login → F12 → Application → Cookies
 2. Copy fresh `csrftoken` and `LEETCODE_SESSION`
-3. GitHub → your repo → Settings → Secrets → update both values
+3. GitHub → your repo → Settings → Secrets → update both
+
+That's the only maintenance needed. Everything else is automatic.
 
 ---
 
-## AI Fallback Chain
+## 💰 Cost breakdown
 
-```
-1st → Qwen3-235B       (best reasoning, free)
-2nd → DeepSeek-R1      (best coding benchmark)
-3rd → Qwen2.5-Coder    (specialized for code)
-4th → Gemini-2.5-Pro   (Google's best)
-5th → Retry with error context
-6th → Guaranteed pure-Python solution (cannot fail)
-```
-
----
-
-## Cost: $0/month
-
-GitHub Actions (free) + OpenRouter free tier + Gmail SMTP (free) = totally free.
+| Service | Cost |
+|---|---|
+| GitHub Actions | ✅ Free (2000 min/month, bot uses ~30/month) |
+| OpenRouter (all models) | ✅ Free tier — no credits needed |
+| Gmail SMTP | ✅ Free |
+| LeetCode submission | ✅ Free |
+| **Total** | **$0/month forever** |
 
 ---
 
-## Disclaimer
+## ⚠️ Disclaimer
 
-Auto-submission is against LeetCode ToS. Use for personal/educational purposes only.
+Auto-submission is against LeetCode's Terms of Service. Use for personal/educational purposes only. This project is for learning automation and AI integration.
